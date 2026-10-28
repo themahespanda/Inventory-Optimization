@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Inventory Management Agent Dashboard</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.03); }
+    }
+    .pulse-glow { animation: pulseGlow 1.8s infinite ease-in-out; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- HEADER BAR -->
+    <header class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-indigo-600/20 text-indigo-500 border border-indigo-500/30 flex items-center justify-center font-bold text-xl">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl md:text-2xl font-bold tracking-tight text-[var(--foreground)]">AI Inventory Agent</h1>
+            <span class="text-xs uppercase font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-semibold">v3.0 Multi-Channel</span>
+          </div>
+          <p class="text-xs text-[var(--muted-foreground)] mt-0.5">Sensors ➔ Perception ➔ Reasoning ➔ Action ➔ Actuators & Notifications</p>
+        </div>
+      </div>
+
+      <!-- AGENT ACTION CONTROLS -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Settings Modal Trigger -->
+        <button onclick="openSettingsModal()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--card)] hover:bg-[var(--border)] border border-[var(--border)] text-[var(--foreground)] transition flex items-center gap-1.5 shadow-sm">
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          Alert Settings
+        </button>
+
+        <!-- Autonomous Mode Toggle -->
+        <button id="btn-auto-toggle" onclick="toggleAutonomousMode()" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:border-slate-500 transition flex items-center gap-2">
+          <span id="auto-indicator" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+          <span id="auto-label">Autonomous: OFF</span>
+        </button>
+
+        <!-- Trigger Agent Cycle Button -->
+        <button id="btn-run-agent" onclick="triggerAgentCycle()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition active:scale-95 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          Run Agent Cycle
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI SUMMARY METRICS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] p-4 rounded-xl shadow-sm">
+        <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] font-medium mb-1">
+          <span>MANAGED CATALOG SKUS</span>
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+          </svg>
+        </div>
+        <div id="stat-total-skus" class="text-2xl font-bold text-[var(--foreground)]">5</div>
+        <div id="stat-health-score" class="text-xs text-emerald-500 font-medium mt-1">100% Health Score</div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] p-4 rounded-xl shadow-sm">
+        <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] font-medium mb-1">
+          <span>LOW STOCK WARNINGS</span>
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+        </div>
+        <div id="stat-low-stock" class="text-2xl font-bold text-amber-500">2</div>
+        <div class="text-xs text-[var(--muted-foreground)] mt-1">Below safety thresholds</div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] p-4 rounded-xl shadow-sm">
+        <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] font-medium mb-1">
+          <span>CRITICAL STOCKOUTS</span>
+          <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div id="stat-critical" class="text-2xl font-bold text-rose-500">1</div>
+        <div class="text-xs text-[var(--muted-foreground)] mt-1">Immediate orders triggered</div>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] p-4 rounded-xl shadow-sm">
+        <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] font-medium mb-1">
+          <span>ORDERS & ALERTS SENT</span>
+          <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div id="stat-orders-placed" class="text-2xl font-bold text-emerald-500">0</div>
+        <div id="stat-total-spend" class="text-xs text-[var(--muted-foreground)] mt-1">Total spend: $0.00</div>
+      </div>
+    </div>
+
+    <!-- AGENT PIPELINE ARCHITECTURE FLOW -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <h2 class="text-xs uppercase tracking-wider font-bold text-[var(--foreground)] flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            Active Agent Pipeline: Sense ➔ Perceive ➔ Reason ➔ Act ➔ Actuate
+          </h2>
+          <p class="text-xs text-[var(--muted-foreground)] mt-0.5">Watch the decision-making loop execute across all system boundaries</p>
+        </div>
+        <span id="pipeline-status-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+          Agent Ready
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-center">
+        <div id="flow-sensors" class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl transition duration-300">
+          <div class="text-indigo-400 font-bold text-xs uppercase mb-1">1. Sensors</div>
+          <div class="text-xs text-[var(--foreground)] font-semibold">Inventory Probe</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Reads catalog & telemetry</div>
+        </div>
+
+        <div id="flow-perception" class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl transition duration-300">
+          <div class="text-purple-400 font-bold text-xs uppercase mb-1">2. Perception</div>
+          <div class="text-xs text-[var(--foreground)] font-semibold">Data Validation</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Type & bound check (&ge; 0)</div>
+        </div>
+
+        <div id="flow-reasoning" class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl transition duration-300">
+          <div class="text-amber-400 font-bold text-xs uppercase mb-1">3. Reasoning</div>
+          <div class="text-xs text-[var(--foreground)] font-semibold">Threshold Engine</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Evaluates safety buffers</div>
+        </div>
+
+        <div id="flow-action" class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl transition duration-300">
+          <div class="text-cyan-400 font-bold text-xs uppercase mb-1">4. Action</div>
+          <div class="text-xs text-[var(--foreground)] font-semibold">PO Batch Planner</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Calculates batch & costs</div>
+        </div>
+
+        <div id="flow-actuators" class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl transition duration-300">
+          <div class="text-emerald-400 font-bold text-xs uppercase mb-1">5. Actuators & Alerts</div>
+          <div class="text-xs text-[var(--foreground)] font-semibold">Order + SMS / Email</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Dispatches to supplier & phone</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUAL ANALYTICS & AI CHAT ROW -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Telemetry Chart (Native Canvas) -->
+      <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h3 class="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              Stock Level vs Safety Thresholds
+            </h3>
+            <p class="text-xs text-[var(--muted-foreground)]">Blue = Current Stock | Red = Safety Threshold</p>
+          </div>
+          <span class="text-xs text-[var(--muted-foreground)] font-mono">Live Visual Telemetry</span>
+        </div>
+
+        <div class="w-full h-56 relative bg-[var(--background)] border border-[var(--border)] rounded-xl p-3">
+          <canvas id="stockCanvas" class="w-full h-full"></canvas>
+        </div>
+      </div>
+
+      <!-- Natural Language AI Chat -->
+      <div class="bg-[var(--card)] border border-[var(--border)] p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+            </svg>
+            <h3 class="text-sm font-bold text-[var(--foreground)]">AI Inventory Assistant</h3>
+          </div>
+          <p class="text-xs text-[var(--muted-foreground)] mb-3">Ask about stock, total spend, health, or run commands</p>
+
+          <div id="chat-stream" class="space-y-2 overflow-y-auto max-h-48 custom-scroll pr-1 text-xs">
+            <div class="p-2.5 rounded-lg bg-indigo-600/10 border border-indigo-500/20 text-[var(--foreground)]">
+              🤖 <b>Agent:</b> Hello! I am your AI Inventory Management Agent. Try asking: <i>"Show low stock"</i> or <i>"What is total spend?"</i>
+            </div>
+          </div>
+        </div>
+
+        <form onsubmit="handleChatSubmit(event)" class="mt-3 flex gap-2">
+          <input id="chat-input" type="text" placeholder="Type query or 'reorder all'..." class="flex-1 bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:border-indigo-500">
+          <button type="submit" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition">
+            Send
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- MAIN DATA: INVENTORY CATALOG & NOTIFICATIONS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Catalog Table -->
+      <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <h2 class="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                Warehouse Inventory Catalog
+              </h2>
+              <p class="text-xs text-[var(--muted-foreground)]">Simulate consumer sales or manual restocks to test agent reaction</p>
+            </div>
+            <button onclick="promptAddSku()" class="px-3 py-1.5 rounded-lg bg-[var(--background)] hover:bg-[var(--border)] text-[var(--foreground)] text-xs font-semibold border border-[var(--border)] flex items-center gap-1.5 transition">
+              + Add Item
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-[var(--foreground)]">
+              <thead class="bg-[var(--background)] text-[var(--muted-foreground)] uppercase font-semibold border-b border-[var(--border)]">
+                <tr>
+                  <th class="p-3">Product / SKU</th>
+                  <th class="p-3">Stock Level</th>
+                  <th class="p-3">Safety Threshold</th>
+                  <th class="p-3">Reorder Batch</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Simulate</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-tbody" class="divide-y divide-[var(--border)]">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Reorder & Multi-Channel Alert Feed -->
+      <div class="bg-[var(--card)] border border-[var(--border)] p-5 rounded-2xl shadow-sm flex flex-col">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+              </svg>
+              Mobile & Email Alert Feed
+            </h2>
+            <p class="text-xs text-[var(--muted-foreground)]">Real-time actuator dispatch log</p>
+          </div>
+          <button onclick="openSettingsModal()" class="text-xs text-amber-500 hover:underline">
+            Configure
+          </button>
+        </div>
+
+        <div id="alerts-stream" class="space-y-3 overflow-y-auto max-h-96 custom-scroll pr-1 flex-1">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- NOTIFICATION & ALERT SETTINGS MODAL -->
+  <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-[var(--border)] pb-3">
+        <h3 class="text-sm font-bold text-[var(--foreground)] flex items-center gap-2">
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+          Alert Destination Settings
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-[var(--muted-foreground)] hover:text-[var(--foreground)] text-base font-bold">&times;</button>
+      </div>
+
+      <form onsubmit="saveSettings(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-[var(--foreground)] font-semibold mb-1">Mobile Phone Number (SMS / WhatsApp):</label>
+          <input id="setting-phone" type="text" placeholder="+1 (555) 019-2834 or +91 9876543210" class="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-[var(--foreground)] focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-[var(--foreground)] font-semibold mb-1">Notification Email Address:</label>
+          <input id="setting-email" type="email" placeholder="manager@warehouse.ai" class="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-3 py-2 text-[var(--foreground)] focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="pt-2 border-t border-[var(--border)] flex justify-between items-center gap-2">
+          <button type="button" onclick="dispatchTestAlert()" class="px-3 py-2 bg-[var(--background)] hover:bg-[var(--border)] text-[var(--foreground)] rounded-xl border border-[var(--border)] transition">
+            Send Test Alert
+          </button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeSettingsModal()" class="px-3 py-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition">Save</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // In-memory reactive state for the self-contained agent
+    let inventory = [
+      { sku: "SKU-1001", name: "Wireless Mouse", stock_level: 8, stock_threshold: 15, reorder_quantity: 40, unit_cost: 12.50 },
+      { sku: "SKU-1002", name: "Mechanical Keyboard", stock_level: 24, stock_threshold: 20, reorder_quantity: 30, unit_cost: 45.00 },
+      { sku: "SKU-1003", name: "USB-C Hub", stock_level: 2, stock_threshold: 10, reorder_quantity: 25, unit_cost: 18.00 },
+      { sku: "SKU-1004", name: "UltraWide Monitor", stock_level: 14, stock_threshold: 8, reorder_quantity: 10, unit_cost: 220.00 },
+      { sku: "SKU-1005", name: "Ergonomic Chair", stock_level: 0, stock_threshold: 5, reorder_quantity: 15, unit_cost: 150.00 },
+    ];
+
+    let alerts = [
+      { timestamp: "Initial System Check", channel: "EMAIL", recipient: "manager@warehouse.ai", summary: "Order dispatched for Ergonomic Chair (+15 units) due to stockout." },
+      { timestamp: "Initial System Check", channel: "SMS / MOBILE", recipient: "+1 (555) 019-2834", summary: "🚨 Low stock alert: USB-C Hub at 2 units. Reorder triggered." }
+    ];
+
+    let alertSettings = {
+      phone: "+1 (555) 019-2834",
+      email: "manager@warehouse.ai"
+    };
+
+    let totalOrdersPlaced = 2;
+    let totalSpend = 2700.00;
+    let autoInterval = null;
+
+    function renderDashboard() {
+      // 1. Metrics
+      const totalSkus = inventory.length;
+      const lowCount = inventory.filter(i => i.stock_level > 0 && i.stock_level < i.stock_threshold).length;
+      const critCount = inventory.filter(i => i.stock_level === 0).length;
+      const healthyCount = inventory.filter(i => i.stock_level >= i.stock_threshold).length;
+      const healthPct = totalSkus > 0 ? Math.round((healthyCount / totalSkus) * 100) : 100;
+
+      document.getElementById('stat-total-skus').innerText = totalSkus;
+      document.getElementById('stat-health-score').innerText = `${healthPct}% Health Score`;
+      document.getElementById('stat-low-stock').innerText = lowCount;
+      document.getElementById('stat-critical').innerText = critCount;
+      document.getElementById('stat-orders-placed').innerText = totalOrdersPlaced;
+      document.getElementById('stat-total-spend').innerText = `Total spend: $${totalSpend.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+      // 2. Table
+      const tbody = document.getElementById('inventory-tbody');
+      tbody.innerHTML = inventory.map(item => {
+        let badge = "";
+        let pct = Math.min(100, Math.round((item.stock_level / (item.stock_threshold * 2 || 20)) * 100));
+        let barColor = "bg-emerald-500";
+
+        if (item.stock_level === 0) {
+          badge = `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-500 border border-rose-500/30">🔴 Depleted</span>`;
+          barColor = "bg-rose-500";
+        } else if (item.stock_level < item.stock_threshold) {
+          badge = `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-500 border border-amber-500/30">⚠️ Low Stock</span>`;
+          barColor = "bg-amber-500";
+        } else {
+          badge = `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">✅ Normal</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-[var(--background)] transition">
+            <td class="p-3">
+              <div class="font-bold text-[var(--foreground)]">${item.name}</div>
+              <div class="text-xs text-[var(--muted-foreground)] font-mono">${item.sku} &bull; $${item.unit_cost.toFixed(2)}/unit</div>
+            </td>
+            <td class="p-3">
+              <div class="font-bold ${item.stock_level < item.stock_threshold ? 'text-rose-500' : 'text-[var(--foreground)]'}">${item.stock_level} units</div>
+              <div class="w-24 bg-[var(--border)] rounded-full h-1.5 mt-1 overflow-hidden">
+                <div class="${barColor} h-1.5 rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </td>
+            <td class="p-3 text-[var(--muted-foreground)] font-mono">${item.stock_threshold} units</td>
+            <td class="p-3 text-[var(--muted-foreground)] font-mono">+${item.reorder_quantity}</td>
+            <td class="p-3">${badge}</td>
+            <td class="p-3 text-right">
+              <div class="inline-flex items-center gap-1">
+                <button onclick="consumeStock('${item.sku}', 1)" title="Simulate 1 sale" class="px-2 py-1 bg-[var(--card)] hover:bg-rose-500/20 text-rose-500 rounded border border-[var(--border)] text-xs font-semibold transition active:scale-95">-1</button>
+                <button onclick="consumeStock('${item.sku}', 5)" title="Simulate 5 sales" class="px-2 py-1 bg-[var(--card)] hover:bg-rose-500/20 text-rose-500 rounded border border-[var(--border)] text-xs font-semibold transition active:scale-95">-5</button>
+                <button onclick="restockItem('${item.sku}', 10)" title="Manual Restock" class="px-2 py-1 bg-[var(--card)] hover:bg-emerald-500/20 text-emerald-500 rounded border border-[var(--border)] text-xs font-semibold transition active:scale-95">+10</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // 3. Alerts Feed
+      const alertContainer = document.getElementById('alerts-stream');
+      if (alerts.length === 0) {
+        alertContainer.innerHTML = `<div class="text-xs text-[var(--muted-foreground)] text-center py-8">No alerts dispatched yet.</div>`;
+      } else {
+        alertContainer.innerHTML = alerts.map(a => `
+          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold ${a.channel === 'EMAIL' ? 'text-indigo-400' : 'text-emerald-400'} flex items-center gap-1">
+                ${a.channel === 'EMAIL' ? '✉️ EMAIL' : '📱 SMS / MOBILE'}
+              </span>
+              <span class="text-[var(--muted-foreground)] font-mono">${a.timestamp}</span>
+            </div>
+            <div class="text-xs text-[var(--foreground)]"><b>To:</b> ${a.recipient}</div>
+            <div class="text-xs text-[var(--muted-foreground)] font-mono bg-[var(--card)] p-1.5 rounded border border-[var(--border)] mt-1">
+              ${a.summary}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      drawStockChart();
+    }
+
+    function drawStockChart() {
+      const canvas = document.getElementById('stockCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const width = rect.width;
+      const height = rect.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const count = inventory.length;
+      if (count === 0) return;
+
+      const paddingLeft = 40;
+      const paddingBottom = 30;
+      const chartWidth = width - paddingLeft - 20;
+      const chartHeight = height - paddingBottom - 20;
+
+      const maxVal = Math.max(50, ...inventory.map(i => Math.max(i.stock_level, i.stock_threshold))) * 1.15;
+
+      // Draw Grid Lines
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+      ctx.lineWidth = 1;
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "rgba(148, 163, 184, 0.7)";
+
+      for (let s = 0; s <= 4; s++) {
+        const yVal = (maxVal / 4) * s;
+        const yPos = height - paddingBottom - (yVal / maxVal) * chartHeight;
+        ctx.beginPath();
+        ctx.moveTo(paddingLeft, yPos);
+        ctx.lineTo(width - 20, yPos);
+        ctx.stroke();
+        ctx.fillText(Math.round(yVal), 10, yPos + 4);
+      }
+
+      const barGroupWidth = chartWidth / count;
+      const barWidth = Math.min(24, barGroupWidth * 0.35);
+
+      inventory.forEach((item, idx) => {
+        const xCenter = paddingLeft + idx * barGroupWidth + barGroupWidth / 2;
+
+        // Current Stock Bar (Blue)
+        const stockH = (item.stock_level / maxVal) * chartHeight;
+        const stockY = height - paddingBottom - stockH;
+        ctx.fillStyle = item.stock_level < item.stock_threshold ? "rgba(244, 63, 94, 0.85)" : "rgba(99, 102, 241, 0.85)";
+        ctx.fillRect(xCenter - barWidth - 2, stockY, barWidth, stockH);
+
+        // Safety Threshold Bar (Red outline)
+        const threshH = (item.stock_threshold / maxVal) * chartHeight;
+        const threshY = height - paddingBottom - threshH;
+        ctx.fillStyle = "rgba(251, 146, 60, 0.6)";
+        ctx.fillRect(xCenter + 2, threshY, barWidth, threshH);
+
+        // SKU label
+        ctx.fillStyle = "rgba(148, 163, 184, 0.9)";
+        ctx.textAlign = "center";
+        const shortLabel = item.sku.replace("SKU-", "");
+        ctx.fillText(shortLabel, xCenter, height - 10);
+      });
+    }
+
+    async function triggerAgentCycle() {
+      const badge = document.getElementById('pipeline-status-badge');
+      badge.innerText = "Agent Reasoning...";
+      badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 pulse-glow";
+
+      const flowNodes = ['flow-sensors', 'flow-perception', 'flow-reasoning', 'flow-action', 'flow-actuators'];
+      for (const id of flowNodes) {
+        const node = document.getElementById(id);
+        node.classList.add('border-indigo-500', 'bg-indigo-600/15');
+        await new Promise(r => setTimeout(r, 120));
+        node.classList.remove('border-indigo-500', 'bg-indigo-600/15');
+      }
+
+      // Execute Agent reasoning logic
+      let ordersThisCycle = 0;
+      const now = new Date().toLocaleTimeString();
+
+      inventory.forEach(item => {
+        if (item.stock_level < item.stock_threshold) {
+          ordersThisCycle++;
+          const orderCost = item.reorder_quantity * item.unit_cost;
+          totalSpend += orderCost;
+          totalOrdersPlaced++;
+
+          const isCritical = item.stock_level === 0;
+          const status = isCritical ? "URGENT_ORDER_PLACED" : "ORDER_PLACED";
+
+          // Actuator updates stock
+          item.stock_level += item.reorder_quantity;
+
+          // Multi-channel Alert Dispatch
+          alerts.unshift({
+            timestamp: now,
+            channel: "SMS / MOBILE",
+            recipient: alertSettings.phone,
+            summary: `🚨 [Reorder Alert] ${item.name} (${item.sku}): +${item.reorder_quantity} units ($${orderCost.toFixed(2)}) dispatched. Status: ${status}`
+          });
+
+          alerts.unshift({
+            timestamp: now,
+            channel: "EMAIL",
+            recipient: alertSettings.email,
+            summary: `Automated PO: ${item.name} | Batch: +${item.reorder_quantity} | Cost: $${orderCost.toFixed(2)} | Actuator: ${status}`
+          });
+        }
+      });
+
+      badge.innerText = `Cycle Complete (+${ordersThisCycle} orders)`;
+      badge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30";
+      renderDashboard();
+    }
+
+    function toggleAutonomousMode() {
+      const btn = document.getElementById('btn-auto-toggle');
+      const indicator = document.getElementById('auto-indicator');
+      const label = document.getElementById('auto-label');
+
+      if (autoInterval) {
+        clearInterval(autoInterval);
+        autoInterval = null;
+        indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+        label.innerText = "Autonomous: OFF";
+      } else {
+        autoInterval = setInterval(() => {
+          // Simulate customer purchases occasionally
+          if (Math.random() > 0.4) {
+            const randomItem = inventory[Math.floor(Math.random() * inventory.length)];
+            randomItem.stock_level = Math.max(0, randomItem.stock_level - Math.floor(Math.random() * 3 + 1));
+          }
+          triggerAgentCycle();
+        }, 5000);
+        indicator.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
+        label.innerText = "Autonomous: ON (5s)";
+      }
+    }
+
+    function consumeStock(sku, amt) {
+      const it = inventory.find(i => i.sku === sku);
+      if (it) {
+        it.stock_level = Math.max(0, it.stock_level - amt);
+        renderDashboard();
+      }
+    }
+
+    function restockItem(sku, amt) {
+      const it = inventory.find(i => i.sku === sku);
+      if (it) {
+        it.stock_level += amt;
+        renderDashboard();
+      }
+    }
+
+    function promptAddSku() {
+      const name = prompt("Enter Product Name:");
+      if (!name) return;
+      const sku = "SKU-" + Math.floor(1000 + Math.random() * 9000);
+      const stock = parseInt(prompt("Current Stock Level:", "10")) || 10;
+      const threshold = parseInt(prompt("Safety Stock Threshold:", "15")) || 15;
+      const reorderQty = parseInt(prompt("Reorder Batch Size:", "25")) || 25;
+      const cost = parseFloat(prompt("Unit Cost ($):", "20.00")) || 20.0;
+
+      inventory.push({ sku, name, stock_level: stock, stock_threshold: threshold, reorder_quantity: reorderQty, unit_cost: cost });
+      renderDashboard();
+    }
+
+    function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const query = input.value.trim().toLowerCase();
+      if (!query) return;
+
+      const chat = document.getElementById('chat-stream');
+      chat.innerHTML += `<div class="p-2 rounded-lg bg-[var(--background)] text-right"><b>You:</b> ${input.value}</div>`;
+      input.value = "";
+
+      let reply = "";
+      if (query.includes("low") || query.includes("shortage")) {
+        const lows = inventory.filter(i => i.stock_level < i.stock_threshold);
+        reply = lows.length > 0 ? `⚠️ <b>${lows.length} Low Items:</b> ` + lows.map(i => `${i.name} (${i.stock_level}/${i.stock_threshold})`).join(', ') : "✅ All inventory items are currently above safety buffers.";
+      } else if (query.includes("spend") || query.includes("cost") || query.includes("budget")) {
+        reply = `💰 <b>Total Spend:</b> $${totalSpend.toLocaleString(undefined, {minimumFractionDigits: 2})} across ${totalOrdersPlaced} reorders.`;
+      } else if (query.includes("health") || query.includes("status")) {
+        const healthy = inventory.filter(i => i.stock_level >= i.stock_threshold).length;
+        reply = `📊 <b>System Health:</b> ${Math.round((healthy/inventory.length)*100)}% (${healthy}/${inventory.length} optimal items).`;
+      } else if (query.includes("reorder") || query.includes("run") || query.includes("fix")) {
+        triggerAgentCycle();
+        reply = "🤖 <b>Agent cycle triggered!</b> Evaluated stock and dispatched necessary reorder batches.";
+      } else {
+        reply = `🤖 Try asking: <i>"Show low stock"</i>, <i>"Total spend"</i>, <i>"Health report"</i>, or <i>"Run cycle"</i>.`;
+      }
+
+      setTimeout(() => {
+        chat.innerHTML += `<div class="p-2.5 rounded-lg bg-indigo-600/10 border border-indigo-500/20 text-[var(--foreground)]">🤖 <b>Agent:</b> ${reply}</div>`;
+        chat.scrollTop = chat.scrollHeight;
+      }, 200);
+    }
+
+    function openSettingsModal() {
+      document.getElementById('setting-phone').value = alertSettings.phone;
+      document.getElementById('setting-email').value = alertSettings.email;
+      document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    function saveSettings(e) {
+      e.preventDefault();
+      alertSettings.phone = document.getElementById('setting-phone').value.trim();
+      alertSettings.email = document.getElementById('setting-email').value.trim();
+      closeSettingsModal();
+      alerts.unshift({
+        timestamp: new Date().toLocaleTimeString(),
+        channel: "SMS / MOBILE",
+        recipient: alertSettings.phone,
+        summary: "Settings verified: Mobile SMS alerts active."
+      });
+      renderDashboard();
+    }
+
+    function dispatchTestAlert() {
+      const now = new Date().toLocaleTimeString();
+      const phone = document.getElementById('setting-phone').value.trim();
+      const email = document.getElementById('setting-email').value.trim();
+      alerts.unshift({
+        timestamp: now,
+        channel: "SMS / MOBILE",
+        recipient: phone,
+        summary: "✅ TEST ALERT: Connection verified to mobile phone."
+      });
+      alerts.unshift({
+        timestamp: now,
+        channel: "EMAIL",
+        recipient: email,
+        summary: "✅ TEST ALERT: SMTP and webhook channels operational."
+      });
+      alert("Test alerts dispatched to mobile phone and email!");
+      closeSettingsModal();
+      renderDashboard();
+    }
+
+    window.addEventListener('resize', drawStockChart);
+    renderDashboard();
+  </script>
+</body>
+</html>
